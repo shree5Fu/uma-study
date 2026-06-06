@@ -10,6 +10,8 @@
 
       gtag('config', 'G-BX8XKM1EF1');
     </script>
+    <!-- Supabase CDN Link -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medical Mastery Tracker</title>
@@ -135,10 +137,10 @@
 
                 <!-- Shield/Auto-save visual indicator -->
                 <div class="bg-emerald-50/80 border border-emerald-200/60 rounded-xl px-3 py-1.5 flex items-center gap-1.5 text-emerald-800 shadow-sm" title="Progress auto-saves locally instantly. Use 'Backup' to download a backup file.">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <svg id="save-status-icon" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
-                    <span class="text-[10px] font-bold tracking-wide uppercase">Protected Auto-Save</span>
+                    <span id="save-status-text" class="text-[10px] font-bold tracking-wide uppercase">Protected Auto-Save</span>
                 </div>
                 
                 <button onclick="createNewProfile()" class="bg-white hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 transition shadow-sm flex items-center gap-1" title="Create a new study profile">
@@ -148,7 +150,7 @@
                     New
                 </button>
 
-                <button onclick="managePasscode()" class="bg-amber-50 hover:bg-amber-100 hover:text-amber-700 text-amber-600 p-2 rounded-xl transition border border-amber-100" title="Set or change profile lock passcode">
+                <button id="btn-lock-profile" onclick="managePasscode()" class="bg-amber-50 hover:bg-amber-100 hover:text-amber-700 text-amber-600 p-2 rounded-xl transition border border-amber-100" title="Set or change profile lock passcode">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
@@ -176,6 +178,16 @@
                     Restore
                 </button>
                 <input type="file" id="import-file" class="hidden" accept=".json" onchange="importUserData(event)">
+
+                <div class="w-px h-6 bg-slate-200 mx-1"></div>
+
+                <!-- Log Out Button -->
+                <button id="btn-logout" onclick="handleSignOut()" class="hidden bg-rose-50 hover:bg-rose-100 hover:text-rose-700 text-rose-600 px-3 py-1.5 rounded-xl text-xs font-semibold border border-rose-100 transition shadow-sm flex items-center gap-1" title="Log out of cloud account">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Log Out
+                </button>
             </div>
         </header>
 
@@ -386,8 +398,79 @@
         </main>
     </div>
 
+    <!-- Sign In Passcode Modal Overlay -->
+    <div id="signin-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-card max-w-sm w-full p-6 text-center border-indigo-500/30 rounded-2xl shadow-xl">
+            <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-indigo-100 shadow-sm animate-bounce">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </div>
+            <h2 class="text-xl font-bold text-slate-900 mb-1">Sign In Required</h2>
+            <p class="text-xs text-slate-500 mb-5 font-medium">Please enter the passcode for: <span id="signin-profile-name" class="text-indigo-600 font-bold"></span></p>
+            <input type="password" id="signin-passcode" class="w-full text-center tracking-widest text-lg font-bold p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none mb-5" placeholder="••••">
+            <div class="flex gap-3">
+                <button onclick="submitPasscode()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-semibold transition shadow-sm">Unlock Profile</button>
+                <button onclick="cancelSignin()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold transition border border-slate-200">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase Auth Credentials Overlay Screen -->
+    <div id="auth-overlay" class="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-card max-w-md w-full p-8 border-indigo-500/20 rounded-2xl shadow-2xl text-center">
+            <div class="bg-indigo-600 text-white p-3.5 rounded-2xl inline-block shadow-lg shadow-indigo-600/30 mb-5">
+                <!-- Lock Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </div>
+            
+            <h2 id="auth-title" class="text-2xl font-bold text-slate-900 leading-tight">Welcome to Medical Mastery</h2>
+            <p id="auth-subtitle" class="text-xs text-slate-500 font-medium mb-6">Create a secure account to sync your study progress in the cloud.</p>
+            
+            <!-- Auth Form -->
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Email Address</label>
+                    <input type="email" id="auth-email" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm" placeholder="you@example.com">
+                </div>
+                <div>
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Password</label>
+                    <input type="password" id="auth-password" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm" placeholder="••••••••">
+                </div>
+            </div>
+            
+            <div class="mt-6 space-y-3.5">
+                <button onclick="handleAuthSubmit()" id="btn-auth-action" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-semibold transition shadow-md shadow-indigo-600/10">
+                    Sign In
+                </button>
+                
+                <div class="text-xs text-slate-500 font-medium">
+                    <span id="auth-toggle-label">Don't have an account?</span>
+                    <button onclick="toggleAuthMode()" id="btn-auth-toggle" class="text-indigo-600 hover:underline font-bold ml-1">Create Account</button>
+                </div>
+                
+                <div class="flex items-center my-4">
+                    <div class="flex-1 border-t border-slate-200/80"></div>
+                    <span class="px-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">or</span>
+                    <div class="flex-1 border-t border-slate-200/80"></div>
+                </div>
+                
+                <button onclick="continueAsGuest()" class="w-full bg-white hover:bg-slate-50 text-slate-700 py-2.5 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm">
+                    Continue as Guest (Offline Mode)
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Script Block -->
     <script>
+        // Initialize Supabase Client
+        const supabaseUrl = 'https://zomfvmpkwqzxphyhyysn.supabase.co';
+        const supabaseKey = 'sb_publishable_RKeV3PTqp6h9sqEbrfZHfw_kcHAnp2K';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
         // Raw Data Curriculum List
         const data = [
             ["June 6", "Anatomy: Terms, Junctions, Epithelium", "Physiology: Intro, Cells", "Revise Anatomy", "MCQs", "Flashcards"],
@@ -415,22 +498,68 @@
 
         // Central State Object
         let state = {
+            isGuest: false,
+            user: null,
             activeProfile: "Default User",
             profiles: ["Default User"],
             data: {
                 tasks: {},
                 completionLogs: [["", "", ""]],
                 revisionLogs: [["", "", ""]],
-                dailyNotes: ""
+                dailyNotes: "",
+                passcode: ""
             }
         };
 
-        let pendingProfileName = "";
+        // Listen for Authentication changes
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            if (session) {
+                state.user = session.user;
+                state.isGuest = false;
+                document.getElementById('auth-overlay').classList.add('hidden');
+                document.getElementById('btn-logout').classList.remove('hidden');
+                document.getElementById('btn-lock-profile').classList.add('hidden'); // disable local lock in cloud mode
+                document.getElementById('save-status-text').textContent = "Cloud Sync Active";
+
+                // Load cloud data
+                await fetchCloudProfiles();
+            } else {
+                state.user = null;
+                if (!state.isGuest) {
+                    document.getElementById('auth-overlay').classList.remove('hidden');
+                    document.getElementById('btn-logout').classList.add('hidden');
+                }
+            }
+        });
 
         // Initialize App on Load
+        let pendingProfileName = "";
+
         window.addEventListener('load', () => {
             migrateOldData();
+
+            // Bind passcode submission to Enter key
+            document.getElementById('signin-passcode').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    submitPasscode();
+                }
+            });
+
+            // Bind enter key to auth fields
+            const handleAuthEnter = (e) => { if (e.key === 'Enter') handleAuthSubmit(); };
+            document.getElementById('auth-email').addEventListener('keypress', handleAuthEnter);
+            document.getElementById('auth-password').addEventListener('keypress', handleAuthEnter);
+        });
+
+        // Continue in local/offline mode
+        function continueAsGuest() {
+            state.isGuest = true;
+            document.getElementById('auth-overlay').classList.add('hidden');
+            document.getElementById('btn-logout').classList.add('hidden');
+            document.getElementById('btn-lock-profile').classList.remove('hidden');
+            document.getElementById('save-status-text').textContent = "Offline (Guest)";
             
+            // Check passcode lock on startup for local storage
             const activeProfile = localStorage.getItem('studytracker_active_profile') || "Default User";
             const profileDataStr = localStorage.getItem(`studytracker_profile_data_${activeProfile}`);
             let profileData = null;
@@ -441,7 +570,6 @@
             }
 
             if (profileData && profileData.passcode) {
-                // Securely lock screen on page load
                 pendingProfileName = activeProfile;
                 document.getElementById('signin-profile-name').textContent = activeProfile;
                 document.getElementById('signin-passcode').value = '';
@@ -457,14 +585,189 @@
             updateAnalytics();
             highlightTodayRow();
             resetTimer();
+        }
 
-            // Bind passcode submission to Enter key
-            document.getElementById('signin-passcode').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    submitPasscode();
+        // Authentication form handler (Sign In / Register toggle)
+        let isSignUpMode = false;
+
+        function toggleAuthMode() {
+            isSignUpMode = !isSignUpMode;
+            document.getElementById('auth-title').textContent = isSignUpMode ? "Create Cloud Account" : "Welcome to Medical Mastery";
+            document.getElementById('auth-subtitle').textContent = isSignUpMode ? "Sign up to securely sync your progress across devices." : "Create a secure account to sync your study progress in the cloud.";
+            document.getElementById('btn-auth-action').textContent = isSignUpMode ? "Register Account" : "Sign In";
+            document.getElementById('auth-toggle-label').textContent = isSignUpMode ? "Already have an account?" : "Don't have an account?";
+            document.getElementById('btn-auth-toggle').textContent = isSignUpMode ? "Sign In" : "Create Account";
+        }
+
+        async function handleAuthSubmit() {
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+
+            if (!email || !password) {
+                alert("Please enter both email and password.");
+                return;
+            }
+
+            document.getElementById('btn-auth-action').textContent = "Processing...";
+            document.getElementById('btn-auth-action').disabled = true;
+
+            if (isSignUpMode) {
+                // Register
+                const { data, error } = await supabase.auth.signUp({ email, password });
+                if (error) {
+                    alert("Registration failed: " + error.message);
+                } else {
+                    alert("Account created successfully! Check your email inbox to confirm registration, then sign in.");
+                    toggleAuthMode();
                 }
-            });
-        });
+            } else {
+                // Login
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) {
+                    alert("Sign In failed: " + error.message);
+                }
+            }
+
+            document.getElementById('btn-auth-action').textContent = isSignUpMode ? "Register Account" : "Sign In";
+            document.getElementById('btn-auth-action').disabled = false;
+        }
+
+        async function handleSignOut() {
+            await supabase.auth.signOut();
+            state.user = null;
+            state.isGuest = false;
+            // Clear page data
+            resetProfileDataToDefault();
+            state.profiles = ["Default User"];
+            state.activeProfile = "Default User";
+            
+            // Show auth overlay
+            document.getElementById('auth-overlay').classList.remove('hidden');
+            document.getElementById('btn-logout').classList.add('hidden');
+            document.getElementById('btn-lock-profile').classList.remove('hidden');
+
+            renderProfileList();
+            renderCalendar();
+            renderLogs('completion');
+            renderLogs('revision');
+            updateNotesUI();
+            updateAnalytics();
+        }
+
+        // Fetch cloud profiles from Supabase database
+        async function fetchCloudProfiles() {
+            if (!state.user) return;
+
+            const { data: rows, error } = await supabase
+                .from('study_progress')
+                .select('profile_name')
+                .order('profile_name', { ascending: true });
+
+            if (error) {
+                console.error("Fetch profiles error:", error);
+                return;
+            }
+
+            if (rows && rows.length > 0) {
+                state.profiles = rows.map(r => r.profile_name);
+                const lastActive = localStorage.getItem('studytracker_active_profile');
+                state.activeProfile = state.profiles.includes(lastActive) ? lastActive : state.profiles[0];
+                
+                // Fetch active profile data
+                await fetchCloudProfileData(state.activeProfile);
+            } else {
+                // Seed Default User profile in cloud database
+                state.profiles = ["Default User"];
+                state.activeProfile = "Default User";
+                resetProfileDataToDefault();
+                await saveCloudState();
+                
+                renderProfileList();
+                performSwitch(state.activeProfile);
+            }
+        }
+
+        async function fetchCloudProfileData(profileName) {
+            if (!state.user) return;
+
+            const { data: row, error } = await supabase
+                .from('study_progress')
+                .select('*')
+                .eq('profile_name', profileName)
+                .single();
+
+            if (error) {
+                console.error("Fetch active profile data error:", error);
+                resetProfileDataToDefault();
+            } else if (row) {
+                state.data = {
+                    tasks: row.tasks || {},
+                    completionLogs: row.completion_logs || [["", "", ""]],
+                    revisionLogs: row.revision_logs || [["", "", ""]],
+                    dailyNotes: row.daily_notes || "",
+                    passcode: "" // passcodes disabled in cloud
+                };
+            }
+
+            renderProfileList();
+            renderCalendar();
+            renderLogs('completion');
+            renderLogs('revision');
+            updateNotesUI();
+            updateAnalytics();
+            highlightTodayRow();
+            resetTimer();
+        }
+
+        // Cloud Debounced Saves
+        let saveTimeout = null;
+        function triggerCloudSave() {
+            if (state.isGuest) {
+                saveState();
+                return;
+            }
+
+            const statusText = document.getElementById('save-status-text');
+            const statusIcon = document.getElementById('save-status-icon');
+            if (statusText) {
+                statusText.textContent = "Saving to cloud...";
+                statusIcon.classList.add('animate-spin');
+            }
+
+            if (saveTimeout) clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveCloudState, 800);
+        }
+
+        async function saveCloudState() {
+            if (state.isGuest || !state.user) return;
+
+            const statusText = document.getElementById('save-status-text');
+            const statusIcon = document.getElementById('save-status-icon');
+
+            const { error } = await supabase
+                .from('study_progress')
+                .upsert({
+                    user_id: state.user.id,
+                    profile_name: state.activeProfile,
+                    tasks: state.data.tasks,
+                    completion_logs: state.data.completionLogs,
+                    revision_logs: state.data.revisionLogs,
+                    daily_notes: state.data.dailyNotes
+                }, { onConflict: 'user_id,profile_name' });
+
+            if (error) {
+                console.error("Cloud save error:", error);
+                if (statusText) {
+                    statusText.textContent = "Save Failed";
+                    statusIcon.classList.remove('animate-spin');
+                }
+            } else {
+                if (statusText) {
+                    statusText.textContent = "Cloud Sync Active";
+                    statusIcon.classList.remove('animate-spin');
+                }
+            }
+        }
 
         // 1. BACKWARD COMPATIBILITY: Migrate existing old storage keys into unified "Default User" profile
         function migrateOldData() {
@@ -535,9 +838,11 @@
         }
 
         function saveState() {
-            localStorage.setItem('studytracker_profiles', JSON.stringify(state.profiles));
-            localStorage.setItem('studytracker_active_profile', state.activeProfile);
-            localStorage.setItem(`studytracker_profile_data_${state.activeProfile}`, JSON.stringify(state.data));
+            if (state.isGuest) {
+                localStorage.setItem('studytracker_profiles', JSON.stringify(state.profiles));
+                localStorage.setItem('studytracker_active_profile', state.activeProfile);
+                localStorage.setItem(`studytracker_profile_data_${state.activeProfile}`, JSON.stringify(state.data));
+            }
         }
 
         function resetProfileDataToDefault() {
@@ -545,33 +850,41 @@
                 tasks: {},
                 completionLogs: [["", "", ""]],
                 revisionLogs: [["", "", ""]],
-                dailyNotes: ""
+                dailyNotes: "",
+                passcode: ""
             };
         }
 
         function switchProfile(profileName) {
-            // Check if target profile is passcode protected
-            const profileDataStr = localStorage.getItem(`studytracker_profile_data_${profileName}`);
-            let profileData = null;
-            if (profileDataStr) {
-                try {
-                    profileData = JSON.parse(profileDataStr);
-                } catch(e) {}
-            }
+            if (state.isGuest) {
+                // Check if target profile is passcode protected
+                const profileDataStr = localStorage.getItem(`studytracker_profile_data_${profileName}`);
+                let profileData = null;
+                if (profileDataStr) {
+                    try {
+                        profileData = JSON.parse(profileDataStr);
+                    } catch(e) {}
+                }
 
-            if (profileData && profileData.passcode) {
-                // Trigger passcode verification modal
-                pendingProfileName = profileName;
-                document.getElementById('signin-profile-name').textContent = profileName;
-                document.getElementById('signin-passcode').value = '';
-                document.getElementById('signin-modal').classList.remove('hidden');
-                document.getElementById('signin-passcode').focus();
-                // Temporarily revert select dropdown value to active profile
-                document.getElementById('profile-select').value = state.activeProfile;
-                return;
-            }
+                if (profileData && profileData.passcode) {
+                    // Trigger passcode verification modal
+                    pendingProfileName = profileName;
+                    document.getElementById('signin-profile-name').textContent = profileName;
+                    document.getElementById('signin-passcode').value = '';
+                    document.getElementById('signin-modal').classList.remove('hidden');
+                    document.getElementById('signin-passcode').focus();
+                    // Temporarily revert select dropdown value to active profile
+                    document.getElementById('profile-select').value = state.activeProfile;
+                    return;
+                }
 
-            performSwitch(profileName);
+                performSwitch(profileName);
+            } else {
+                // Cloud profile switch
+                state.activeProfile = profileName;
+                localStorage.setItem('studytracker_active_profile', profileName);
+                fetchCloudProfileData(profileName);
+            }
         }
 
         function performSwitch(profileName) {
@@ -628,7 +941,7 @@
             }
         }
 
-        function createNewProfile() {
+        async function createNewProfile() {
             const name = prompt("Enter a name for the new profile:");
             if (!name) return;
             const cleanedName = name.trim();
@@ -639,20 +952,33 @@
                 return;
             }
 
-            const passcode = prompt("Set a passcode lock for this profile (optional - leave blank if you do not want password protection):");
+            if (state.isGuest) {
+                // Local profile creation
+                const passcode = prompt("Set a passcode lock for this profile (optional - leave blank if you do not want password protection):");
+                state.profiles.push(cleanedName);
+                state.activeProfile = cleanedName;
+                resetProfileDataToDefault();
+                state.data.passcode = passcode ? passcode.trim() : "";
+                saveState();
 
-            state.profiles.push(cleanedName);
-            state.activeProfile = cleanedName;
-            resetProfileDataToDefault();
-            state.data.passcode = passcode ? passcode.trim() : "";
-            saveState();
-
-            // Refresh UI
-            renderProfileList();
-            performSwitch(cleanedName);
+                renderProfileList();
+                performSwitch(cleanedName);
+            } else {
+                // Cloud profile creation
+                state.profiles.push(cleanedName);
+                state.activeProfile = cleanedName;
+                resetProfileDataToDefault();
+                
+                // Create in DB
+                await saveCloudState();
+                renderProfileList();
+                performSwitch(cleanedName);
+            }
         }
 
         function managePasscode() {
+            if (!state.isGuest) return; // Passcodes disabled in cloud mode
+
             const currentPasscode = state.data.passcode || "";
             let verified = true;
             
@@ -679,7 +1005,7 @@
             }
         }
 
-        function deleteActiveProfile() {
+        async function deleteActiveProfile() {
             if (state.profiles.length <= 1) {
                 alert("Cannot delete the only remaining profile. Create a new one first.");
                 return;
@@ -688,17 +1014,39 @@
             const confirmDelete = confirm(`Are you sure you want to delete profile "${state.activeProfile}"? All study progress for this profile will be permanently lost.`);
             if (!confirmDelete) return;
 
-            const indexToDelete = state.profiles.indexOf(state.activeProfile);
-            state.profiles.splice(indexToDelete, 1);
-            localStorage.removeItem(`studytracker_profile_data_${state.activeProfile}`);
+            const deletedProfile = state.activeProfile;
 
-            // Switch to the first profile in the list
-            state.activeProfile = state.profiles[0];
-            saveState();
+            if (state.isGuest) {
+                // Local delete
+                const indexToDelete = state.profiles.indexOf(deletedProfile);
+                state.profiles.splice(indexToDelete, 1);
+                localStorage.removeItem(`studytracker_profile_data_${deletedProfile}`);
 
-            // Refresh UI
-            renderProfileList();
-            switchProfile(state.activeProfile);
+                state.activeProfile = state.profiles[0];
+                saveState();
+                renderProfileList();
+                performSwitch(state.activeProfile);
+            } else {
+                // Cloud delete
+                const indexToDelete = state.profiles.indexOf(deletedProfile);
+                state.profiles.splice(indexToDelete, 1);
+                
+                const { error } = await supabase
+                    .from('study_progress')
+                    .delete()
+                    .eq('profile_name', deletedProfile)
+                    .eq('user_id', state.user.id);
+
+                if (error) {
+                    alert("Failed to delete profile from cloud: " + error.message);
+                    return;
+                }
+
+                state.activeProfile = state.profiles[0];
+                localStorage.setItem('studytracker_active_profile', state.activeProfile);
+                renderProfileList();
+                await fetchCloudProfileData(state.activeProfile);
+            }
         }
 
         function renderProfileList() {
@@ -821,7 +1169,7 @@
                 labelSpan.classList.remove('completed');
             }
 
-            saveState();
+            triggerCloudSave();
             updateAnalytics();
         }
 
@@ -869,14 +1217,14 @@
             const listKey = type === 'completion' ? 'completionLogs' : 'revisionLogs';
             if (!state.data[listKey]) state.data[listKey] = [];
             state.data[listKey].push(["", "", ""]);
-            saveState();
+            triggerCloudSave();
             renderLogs(type);
         }
 
         function updateLog(type, index, field, value) {
             const listKey = type === 'completion' ? 'completionLogs' : 'revisionLogs';
             state.data[listKey][index][field] = value;
-            saveState();
+            triggerCloudSave();
         }
 
         function removeLog(type, index) {
@@ -885,14 +1233,14 @@
             if (state.data[listKey].length === 0) {
                 state.data[listKey].push(["", "", ""]);
             }
-            saveState();
+            triggerCloudSave();
             renderLogs(type);
         }
 
         // 6. NOTES & REFLECTIONS
         function updateNotes(value) {
             state.data.dailyNotes = value;
-            saveState();
+            triggerCloudSave();
         }
 
         function updateNotesUI() {
@@ -900,7 +1248,6 @@
         }
 
         // 7. STUDY ANALYTICS ENGINE
-        // Map table cell topics to major subjects for metrics
         function getSubject(cellText) {
             const text = cellText.toLowerCase();
             if (text.includes("anatomy") || text.includes("embrio") || text.includes("junctions") || text.includes("epithelium") || text.includes("connective") || text.includes("embryo") || text.includes("anat")) return "Anatomy";
@@ -917,7 +1264,7 @@
         }
 
         function updateAnalytics() {
-            const totalTasks = 21 * 5; // 21 days, 5 slots per day
+            const totalTasks = 21 * 5; 
             let completedCount = 0;
 
             const subjectTotals = {};
@@ -963,7 +1310,7 @@
             document.getElementById('progress-percentage').textContent = `${percentage}%`;
             document.getElementById('progress-fraction').textContent = `${completedCount} / ${totalTasks}`;
             
-            // Adjust SVG Ring dashoffset (circumference of r=42 is 2 * Math.PI * 42 = 263.89)
+            // Adjust SVG Ring dashoffset
             const circumference = 263.89;
             const offset = circumference - (percentage / 100) * circumference;
             document.getElementById('progress-circle').style.strokeDashoffset = offset;
@@ -997,7 +1344,6 @@
 
         // 8. DYNAMIC DAY HIGHLIGHTER
         function highlightTodayRow() {
-            // Get today's local date and match format (e.g. "June 6" or "June 12")
             const today = new Date();
             const formatOption = { month: 'long', day: 'numeric' };
             const formattedToday = today.toLocaleDateString('en-US', formatOption); 
@@ -1020,12 +1366,11 @@
 
         // 9. POMODORO FOCUS TIMER WIDGET (With Synthesized Beep Notification)
         let timerInterval = null;
-        let timerDuration = 25 * 60; // default 25m in seconds
-        let currentTimerMode = 'study'; // study, short, long
+        let timerDuration = 25 * 60; 
+        let currentTimerMode = 'study'; 
         let isTimerRunning = false;
 
         function setTimerMode(mode, minutes) {
-            // Clear current execution
             pauseTimer();
 
             currentTimerMode = mode;
@@ -1051,13 +1396,14 @@
             updateTimerDisplay();
         }
 
+        // Update Timer countdown UI
         function updateTimerDisplay() {
             const minutes = Math.floor(timerDuration / 60);
             const seconds = timerDuration % 60;
             document.getElementById('timer-display').textContent = 
                 `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-            // Adjust countdown progress circle (circumference = 2 * Math.PI * 45 = 282.74)
+            // Adjust countdown progress circle
             const circumference = 282.74;
             let totalModeDuration = 25 * 60;
             if (currentTimerMode === 'short') totalModeDuration = 5 * 60;
@@ -1088,7 +1434,6 @@
                     timerDuration--;
                     updateTimerDisplay();
                 } else {
-                    // Timer finished
                     triggerAlarm();
                     resetTimer();
                 }
@@ -1115,15 +1460,14 @@
             updateTimerDisplay();
         }
 
-        // Web Audio Synthesized Chime (100% offline, requires no external static audio files)
+        // Web Audio Synthesized Chime (100% offline)
         function triggerAlarm() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 
-                // Play double beep
-                playTone(audioCtx, 587.33, 0.4); // D5
+                playTone(audioCtx, 587.33, 0.4); 
                 setTimeout(() => {
-                    playTone(audioCtx, 659.25, 0.5); // E5
+                    playTone(audioCtx, 659.25, 0.5); 
                 }, 450);
 
                 setTimeout(() => {
@@ -1146,8 +1490,8 @@
             osc.frequency.setValueAtTime(freq, ctx.currentTime);
             
             gainNode.gain.setValueAtTime(0, ctx.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05); // attack
-            gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration - 0.05); // decay
+            gainNode.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05); 
+            gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration - 0.05); 
 
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + duration);
