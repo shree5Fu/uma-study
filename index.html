@@ -10,8 +10,14 @@
 
       gtag('config', 'G-BX8XKM1EF1');
     </script>
-    <!-- Supabase CDN Link -->
+    <!-- Supabase CDN Link with Unpkg fallback -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        if (!window.supabase) {
+            console.warn("jsDelivr CDN failed to load Supabase. Trying unpkg fallback...");
+            document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medical Mastery Tracker</title>
@@ -466,10 +472,17 @@
 
     <!-- Script Block -->
     <script>
-        // Initialize Supabase Client
-        const supabaseUrl = 'https://zomfvmpkwqzxphyhyysn.supabase.co';
-        const supabaseKey = 'sb_publishable_RKeV3PTqp6h9sqEbrfZHfw_kcHAnp2K';
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        // Initialize Supabase Client Safely
+        let supabase = null;
+        try {
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                const supabaseUrl = 'https://zomfvmpkwqzxphyhyysn.supabase.co';
+                const supabaseKey = 'sb_publishable_RKeV3PTqp6h9sqEbrfZHfw_kcHAnp2K';
+                supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+            }
+        } catch (e) {
+            console.error("Failed to initialize Supabase client:", e);
+        }
 
         // Raw Data Curriculum List
         const data = [
@@ -511,27 +524,6 @@
             }
         };
 
-        // Listen for Authentication changes
-        supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session) {
-                state.user = session.user;
-                state.isGuest = false;
-                document.getElementById('auth-overlay').classList.add('hidden');
-                document.getElementById('btn-logout').classList.remove('hidden');
-                document.getElementById('btn-lock-profile').classList.add('hidden'); // disable local lock in cloud mode
-                document.getElementById('save-status-text').textContent = "Cloud Sync Active";
-
-                // Load cloud data
-                await fetchCloudProfiles();
-            } else {
-                state.user = null;
-                if (!state.isGuest) {
-                    document.getElementById('auth-overlay').classList.remove('hidden');
-                    document.getElementById('btn-logout').classList.add('hidden');
-                }
-            }
-        });
-
         // Initialize App on Load
         let pendingProfileName = "";
 
@@ -549,6 +541,51 @@
             const handleAuthEnter = (e) => { if (e.key === 'Enter') handleAuthSubmit(); };
             document.getElementById('auth-email').addEventListener('keypress', handleAuthEnter);
             document.getElementById('auth-password').addEventListener('keypress', handleAuthEnter);
+
+            // Handle Supabase initialization logic
+            if (!supabase) {
+                // CDN failed, configure fallback to Local Guest Mode automatically
+                console.warn("Supabase library not loaded. Falling back to local Guest mode.");
+                const titleEl = document.getElementById('auth-title');
+                const subtitleEl = document.getElementById('auth-subtitle');
+                if (titleEl) titleEl.textContent = "Offline Mode Enabled";
+                if (subtitleEl) subtitleEl.textContent = "Could not reach database services. Accessing local profile storage...";
+                
+                // Hide inputs and login button
+                document.getElementById('auth-email').parentElement.classList.add('hidden');
+                document.getElementById('auth-password').parentElement.classList.add('hidden');
+                document.getElementById('btn-auth-action').classList.add('hidden');
+                
+                // For safety check if element exists
+                const guestBtn = document.querySelector('#auth-overlay button[onclick="continueAsGuest()"]');
+                if (guestBtn && guestBtn.parentElement) {
+                    guestBtn.parentElement.classList.add('hidden');
+                }
+                
+                // Auto trigger Guest load
+                setTimeout(continueAsGuest, 1500);
+            } else {
+                // Setup active Auth listener
+                supabase.auth.onAuthStateChange(async (event, session) => {
+                    if (session) {
+                        state.user = session.user;
+                        state.isGuest = false;
+                        document.getElementById('auth-overlay').classList.add('hidden');
+                        document.getElementById('btn-logout').classList.remove('hidden');
+                        document.getElementById('btn-lock-profile').classList.add('hidden'); // disable local lock in cloud mode
+                        document.getElementById('save-status-text').textContent = "Cloud Sync Active";
+
+                        // Load cloud data
+                        await fetchCloudProfiles();
+                    } else {
+                        state.user = null;
+                        if (!state.isGuest) {
+                            document.getElementById('auth-overlay').classList.remove('hidden');
+                            document.getElementById('btn-logout').classList.add('hidden');
+                        }
+                    }
+                });
+            }
         });
 
         // Continue in local/offline mode
@@ -600,6 +637,8 @@
         }
 
         async function handleAuthSubmit() {
+            if (!supabase) return;
+
             const email = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-password').value;
 
@@ -617,8 +656,13 @@
                 if (error) {
                     alert("Registration failed: " + error.message);
                 } else {
-                    alert("Account created successfully! Check your email inbox to confirm registration, then sign in.");
-                    toggleAuthMode();
+                    // Check if auto-confirmed (some setups bypass verify)
+                    if (data && data.user && data.session) {
+                        alert("Account registered successfully and logged in!");
+                    } else {
+                        alert("Account registered successfully! Check your email inbox to confirm registration, then sign in.");
+                        toggleAuthMode();
+                    }
                 }
             } else {
                 // Login
@@ -633,6 +677,7 @@
         }
 
         async function handleSignOut() {
+            if (!supabase) return;
             await supabase.auth.signOut();
             state.user = null;
             state.isGuest = false;
@@ -656,7 +701,7 @@
 
         // Fetch cloud profiles from Supabase database
         async function fetchCloudProfiles() {
-            if (!state.user) return;
+            if (!state.user || !supabase) return;
 
             const { data: rows, error } = await supabase
                 .from('study_progress')
@@ -688,7 +733,7 @@
         }
 
         async function fetchCloudProfileData(profileName) {
-            if (!state.user) return;
+            if (!state.user || !supabase) return;
 
             const { data: row, error } = await supabase
                 .from('study_progress')
@@ -739,7 +784,7 @@
         }
 
         async function saveCloudState() {
-            if (state.isGuest || !state.user) return;
+            if (state.isGuest || !state.user || !supabase) return;
 
             const statusText = document.getElementById('save-status-text');
             const statusIcon = document.getElementById('save-status-icon');
@@ -1498,22 +1543,5 @@
         }
     </script>
 
-    <!-- Sign In Passcode Modal Overlay -->
-    <div id="signin-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="glass-card max-w-sm w-full p-6 text-center border-indigo-500/30 rounded-2xl shadow-xl">
-            <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-indigo-100 shadow-sm animate-bounce">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-            </div>
-            <h2 class="text-xl font-bold text-slate-900 mb-1">Sign In Required</h2>
-            <p class="text-xs text-slate-500 mb-5 font-medium">Please enter the passcode for: <span id="signin-profile-name" class="text-indigo-600 font-bold"></span></p>
-            <input type="password" id="signin-passcode" class="w-full text-center tracking-widest text-lg font-bold p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none mb-5" placeholder="••••">
-            <div class="flex gap-3">
-                <button onclick="submitPasscode()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-semibold transition shadow-sm">Unlock Profile</button>
-                <button onclick="cancelSignin()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold transition border border-slate-200">Cancel</button>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
