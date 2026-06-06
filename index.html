@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Mastery Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        
+        body { 
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/e0/Radha_Krishna_in_the_garden.jpg') !important;
+            background-size: cover !important;
+            background-position: center !important;
+            background-attachment: fixed !important;
+            background-repeat: no-repeat !important;
+            margin: 0;
+            padding: 0;
+        }
+
+        .bg-overlay {
+            background: linear-gradient(135deg, rgba(248, 250, 252, 0.88) 0%, rgba(254, 243, 199, 0.88) 100%) !important;
+            min-height: 100vh;
+            width: 100%;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        
+        .quote-container {
+            position: relative;
+            background: linear-gradient(135deg, rgba(255, 251, 235, 0.9) 0%, rgba(254, 243, 199, 0.9) 100%);
+            border: 1px solid #fcd34d;
+        }
+
+        .quote-text { 
+            font-family: 'Playfair Display', serif;
+            line-height: 1.6;
+            color: #78350f;
+        }
+
+        .quote-accent {
+            color: #d97706;
+            font-size: 2rem;
+            display: block;
+            margin-bottom: -0.5rem;
+        }
+
+        .completed { 
+            text-decoration: line-through; 
+            opacity: 0.55; 
+            color: #64748b;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+        }
+
+        /* Custom Scrollbar for sleek UI */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.3);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.6);
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen">
+    <div class="bg-overlay p-4 md:p-6 lg:p-8">
+        
+        <!-- Header / Navigation Bar -->
+        <header class="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row items-center justify-between gap-4 bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-white/40 shadow-sm">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-600/20">
+                    <!-- Book / Heartbeat Medical SVG Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900 leading-tight">Medical Mastery</h1>
+                    <p class="text-xs text-slate-500 font-medium">Interactive Learning & Analytics Tracker</p>
+                </div>
+            </div>
+            
+            <!-- User Profiles Login Bar -->
+            <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <!-- User Profile / Login status card -->
+                <div class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-inner">
+                    <!-- User Avatar / Login Icon -->
+                    <div class="bg-slate-200 p-1.5 rounded-lg text-slate-600 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <span class="text-xs text-slate-500 font-medium">Logged in:</span>
+                    <select id="profile-select" onchange="switchProfile(this.value)" class="bg-transparent text-sm font-semibold text-slate-800 focus:outline-none cursor-pointer">
+                        <!-- Profiles will be dynamically injected here -->
+                    </select>
+                </div>
+
+                <!-- Shield/Auto-save visual indicator -->
+                <div class="bg-emerald-50/80 border border-emerald-200/60 rounded-xl px-3 py-1.5 flex items-center gap-1.5 text-emerald-800 shadow-sm" title="Progress auto-saves locally instantly. Use 'Backup' to download a backup file.">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <span class="text-[10px] font-bold tracking-wide uppercase">Protected Auto-Save</span>
+                </div>
+                
+                <button onclick="createNewProfile()" class="bg-white hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 transition shadow-sm flex items-center gap-1" title="Create a new study profile">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    New
+                </button>
+
+                <button onclick="managePasscode()" class="bg-amber-50 hover:bg-amber-100 hover:text-amber-700 text-amber-600 p-2 rounded-xl transition border border-amber-100" title="Set or change profile lock passcode">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </button>
+                
+                <button onclick="deleteActiveProfile()" class="bg-rose-50 hover:bg-rose-100 hover:text-rose-700 text-rose-600 p-2 rounded-xl transition border border-rose-100" title="Delete current profile">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                
+                <div class="w-px h-6 bg-slate-200 mx-1"></div>
+                
+                <!-- Backup & Restore System -->
+                <button onclick="exportUserData()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1" title="Backup all profile data to a JSON file">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Backup
+                </button>
+                <button onclick="triggerImport()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1" title="Restore profiles from backup file">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Restore
+                </button>
+                <input type="file" id="import-file" class="hidden" accept=".json" onchange="importUserData(event)">
+            </div>
+        </header>
+
+        <!-- Main Dashboard Layout -->
+        <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            
+            <!-- LEFT COLUMN: Main Timetable schedule + Logs + Notes (Span 2) -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- Philosophy Quote Accent -->
+                <div class="quote-container shadow-sm p-6 rounded-2xl">
+                    <span class="quote-accent">❝</span>
+                    <p class="text-lg italic quote-text leading-relaxed px-4">
+                        Karma is the law of cause and effect, where your actions become your destiny. The Law of Attraction is the mirror of your focus, reflecting the energy you put out into the universe. Study with intention, for every effort is a seed planted for your success.
+                    </p>
+                    <div class="text-right mt-1">
+                        <span class="quote-accent rotate-180 inline-block">❝</span>
+                    </div>
+                </div>
+
+                <!-- Main Schedule -->
+                <section class="glass-card rounded-2xl overflow-hidden shadow-sm border border-slate-200">
+                    <div class="p-5 border-b border-slate-200 bg-white/40 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">Master Study Calendar</h2>
+                            <p class="text-xs text-slate-500 font-medium">Daily morning to night structured intervals</p>
+                        </div>
+                        <div class="text-xs font-semibold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg border border-indigo-100 flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                            <span>June 6 – June 26</span>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-indigo-600 text-white text-[11px] uppercase tracking-wider">
+                                    <th class="p-4 font-semibold">Date</th>
+                                    <th class="p-4 font-semibold">Morning</th>
+                                    <th class="p-4 font-semibold">Late Morning</th>
+                                    <th class="p-4 font-semibold">Afternoon</th>
+                                    <th class="p-4 font-semibold">Evening</th>
+                                    <th class="p-4 font-semibold">Night</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tracker-body" class="divide-y divide-slate-200">
+                                <!-- Calendar Rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Chapter Completion Log & Daily Revision Log -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- Chapter Completion Log -->
+                    <section class="glass-card rounded-2xl p-5 shadow-sm border-l-4 border-l-indigo-600 border border-slate-200">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h3 class="text-base font-bold text-indigo-900">Chapter Completion Log</h3>
+                                <p class="text-[11px] text-slate-500">Log core topic coverage</p>
+                            </div>
+                            <button onclick="addLog('completion')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition shadow-sm flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                </svg>
+                                Add Row
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto max-h-[300px]">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-indigo-50/70 text-indigo-800 font-semibold uppercase tracking-wider text-[10px]">
+                                        <th class="p-2 border border-slate-200/80">Date</th>
+                                        <th class="p-2 border border-slate-200/80">Time</th>
+                                        <th class="p-2 border border-slate-200/80">Topic Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="completion-body">
+                                    <!-- Dynamic rows loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- Daily Revision Log -->
+                    <section class="glass-card rounded-2xl p-5 shadow-sm border-l-4 border-l-emerald-600 border border-slate-200">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h3 class="text-base font-bold text-emerald-900">Daily Revision Log</h3>
+                                <p class="text-[11px] text-slate-500">Log active recall sessions</p>
+                            </div>
+                            <button onclick="addLog('revision')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition shadow-sm flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                </svg>
+                                Add Row
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto max-h-[300px]">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-emerald-50/70 text-emerald-800 font-semibold uppercase tracking-wider text-[10px]">
+                                        <th class="p-2 border border-slate-200/80">Date</th>
+                                        <th class="p-2 border border-slate-200/80">Time</th>
+                                        <th class="p-2 border border-slate-200/80">Subject Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="revision-body">
+                                    <!-- Dynamic rows loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Daily Notes -->
+                <section class="glass-card rounded-2xl p-6 shadow-sm border border-slate-200">
+                    <div class="flex items-center gap-2 mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        <h2 class="text-base font-bold text-slate-800">Daily Notes & Reflections</h2>
+                    </div>
+                    <textarea id="daily-notes" oninput="updateNotes(this.value)" class="w-full h-36 p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white/40 backdrop-blur-sm transition-all text-sm placeholder-slate-400 leading-relaxed" placeholder="Jot down notes, focus adjustments, weak topics, or next day planning..."></textarea>
+                </section>
+            </div>
+
+            <!-- RIGHT COLUMN: Dashboard widgets (Analytics, Timer, etc.) (Span 1) -->
+            <div class="space-y-8">
+                
+                <!-- Analytics & Stats Card -->
+                <section class="glass-card rounded-2xl p-6 shadow-sm border border-slate-200">
+                    <h2 class="text-base font-bold text-slate-800 mb-5 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Study Analytics
+                    </h2>
+                    
+                    <!-- Global Progress Ring -->
+                    <div class="flex items-center gap-6 mb-6 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                        <div class="relative w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                            <!-- Circular Gauge SVG -->
+                            <svg class="absolute top-0 left-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="42" stroke="#e2e8f0" stroke-width="8" fill="transparent" />
+                                <circle id="progress-circle" cx="50" cy="50" r="42" stroke="#4f46e5" stroke-width="8" fill="transparent"
+                                    stroke-dasharray="263.89" stroke-dashoffset="263.89" stroke-linecap="round" class="transition-all duration-500 ease-out" />
+                            </svg>
+                            <span id="progress-percentage" class="text-lg font-bold text-slate-800">0%</span>
+                        </div>
+                        <div>
+                            <span class="text-xs uppercase text-slate-400 font-bold tracking-wider">Overall Progress</span>
+                            <h3 id="progress-fraction" class="text-xl font-extrabold text-indigo-700 leading-tight">0 / 105</h3>
+                            <p class="text-[10px] text-slate-500 font-medium">Tasks checked off</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Subject-wise Progress bars -->
+                    <div>
+                        <h3 class="text-xs font-bold uppercase text-slate-400 tracking-wider mb-3">Topic Progress Breakdown</h3>
+                        <div id="subject-progress-container" class="space-y-3.5 max-h-[350px] overflow-y-auto pr-1">
+                            <!-- Subject progress bars will be dynamically loaded here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Pomodoro Focus Timer Card -->
+                <section class="glass-card rounded-2xl p-6 shadow-sm border border-slate-200">
+                    <h2 class="text-base font-bold text-slate-800 mb-5 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Pomodoro Timer
+                    </h2>
+
+                    <!-- Timer Mode tabs -->
+                    <div class="flex bg-slate-100 p-1 rounded-xl mb-6 text-xs font-semibold">
+                        <button onclick="setTimerMode('study', 25)" id="btn-mode-study" class="flex-1 py-1.5 rounded-lg text-indigo-700 bg-white shadow-sm transition">Study</button>
+                        <button onclick="setTimerMode('short', 5)" id="btn-mode-short" class="flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">Short Break</button>
+                        <button onclick="setTimerMode('long', 15)" id="btn-mode-long" class="flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">Long Break</button>
+                    </div>
+
+                    <!-- Visual Timer Clock -->
+                    <div class="relative w-40 h-40 mx-auto mb-6 flex items-center justify-center">
+                        <svg class="absolute top-0 left-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" stroke="#f1f5f9" stroke-width="5" fill="transparent" />
+                            <circle id="timer-progress" cx="50" cy="50" r="45" stroke="#6366f1" stroke-width="5" fill="transparent"
+                                stroke-dasharray="282.74" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-300" />
+                        </svg>
+                        <div class="text-center z-10">
+                            <span id="timer-display" class="text-3xl font-extrabold text-slate-800 tracking-tight">25:00</span>
+                            <p id="timer-label" class="text-[10px] uppercase text-indigo-500 font-bold tracking-widest mt-1">Focus Time</p>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="flex gap-2">
+                        <button id="btn-timer-toggle" onclick="toggleTimer()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-semibold transition shadow-sm">
+                            Start Focus
+                        </button>
+                        <button onclick="resetTimer()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold transition border border-slate-200">
+                            Reset
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Script Block -->
+    <script>
+        // Raw Data Curriculum List
+        const data = [
+            ["June 6", "Anatomy: Terms, Junctions, Epithelium", "Physiology: Intro, Cells", "Revise Anatomy", "MCQs", "Flashcards"],
+            ["June 7", "Anatomy: Connective, Embryo", "Physiology: Compartments", "Revise Biochem", "MCQs", "Summary"],
+            ["June 8", "Biochem: Cell biology, Carbs", "Biochem: Proteins", "Revise Anatomy", "MCQs", "Flashcards"],
+            ["June 9", "Biochem: Vitamins, Metabolism", "Physiology: Transport", "Revise Biochem", "MCQs", "Summary"],
+            ["June 10", "Micro: History, Classification", "Micro: Normal flora", "Revise Biochem", "MCQs", "Flashcards"],
+            ["June 11", "Micro: Pathogenic bacteria", "Micro: Lab diagnosis", "Revise Micro", "MCQs", "Summary"],
+            ["June 12", "Micro: Fungi, Parasites", "Micro: Mycoses, Skin", "Revise Micro", "MCQs", "Flashcards"],
+            ["June 13", "Patho: Adaptations, Inflam", "Patho: Wound healing, Oedema", "Revise Micro", "MCQs", "Summary"],
+            ["June 14", "Patho: Thrombosis, Infarct", "Patho: Shock", "Revise Patho", "MCQs", "Flashcards"],
+            ["June 15", "Patho: Tumors, Melanoma", "Patho: Squamous lesions", "Revise Patho", "MCQs", "Summary"],
+            ["June 16", "Pharma: Sources, Routes", "Pharma: Kinetics", "Revise Patho", "MCQs", "Flashcards"],
+            ["June 17", "Pharma: Dynamics", "Pharma: Adverse reactions", "Revise Pharma", "MCQs", "Summary"],
+            ["June 18", "Pharma: Essential drugs", "Pharma: ANS intro", "Revise Pharma", "MCQs", "Flashcards"],
+            ["June 19", "Pharma: Sympathetic", "Pharma: Parasympathetic", "Revise Pharma", "MCQs", "Summary"],
+            ["June 20", "Pharma: Adrenergic/Cholinergic", "Pharma: Glaucoma", "Revise ANS", "MCQs", "Flashcards"],
+            ["June 21", "Pharma: Antibacterials", "Pharma: Antileprosy", "Revise Pharma", "MCQs", "Summary"],
+            ["June 22", "Comm Med: Nutrition", "Comm Med: Health Concept", "Revise Pharma", "MCQs", "Flashcards"],
+            ["June 23", "Comm Med: Modern/Ancient", "ICM: Patient relationship", "Revise Comm Med", "MCQs", "Summary"],
+            ["June 24", "ICM: Communication/History", "ICM: Physical/Surgical", "Revise ICM", "MCQs", "Flashcards"],
+            ["June 25", "Rapid Rev: Anat/Physio", "Biochem/Micro", "Summary Sheets", "MCQs", "Flashcards"],
+            ["June 26", "Grand Rev: Patho/Pharma", "Comm/ICM", "100-150 MCQs", "Weak Areas", "Final Flashcards"]
+        ];
+
+        // Central State Object
+        let state = {
+            activeProfile: "Default User",
+            profiles: ["Default User"],
+            data: {
+                tasks: {},
+                completionLogs: [["", "", ""]],
+                revisionLogs: [["", "", ""]],
+                dailyNotes: ""
+            }
+        };
+
+        let pendingProfileName = "";
+
+        // Initialize App on Load
+        window.addEventListener('load', () => {
+            migrateOldData();
+            
+            const activeProfile = localStorage.getItem('studytracker_active_profile') || "Default User";
+            const profileDataStr = localStorage.getItem(`studytracker_profile_data_${activeProfile}`);
+            let profileData = null;
+            if (profileDataStr) {
+                try {
+                    profileData = JSON.parse(profileDataStr);
+                } catch(e) {}
+            }
+
+            if (profileData && profileData.passcode) {
+                // Securely lock screen on page load
+                pendingProfileName = activeProfile;
+                document.getElementById('signin-profile-name').textContent = activeProfile;
+                document.getElementById('signin-passcode').value = '';
+                document.getElementById('signin-modal').classList.remove('hidden');
+            }
+
+            loadState();
+            renderCalendar();
+            renderProfileList();
+            renderLogs('completion');
+            renderLogs('revision');
+            updateNotesUI();
+            updateAnalytics();
+            highlightTodayRow();
+            resetTimer();
+
+            // Bind passcode submission to Enter key
+            document.getElementById('signin-passcode').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    submitPasscode();
+                }
+            });
+        });
+
+        // 1. BACKWARD COMPATIBILITY: Migrate existing old storage keys into unified "Default User" profile
+        function migrateOldData() {
+            if (localStorage.getItem('studytracker_profiles')) return; // Already migrated or fresh load
+
+            const profiles = ["Default User"];
+            localStorage.setItem('studytracker_profiles', JSON.stringify(profiles));
+            localStorage.setItem('studytracker_active_profile', "Default User");
+
+            const tasks = {};
+            for (let i = 0; i < 21; i++) {
+                for (let j = 1; j <= 5; j++) {
+                    const key = `check-${i}-${j}`;
+                    const val = localStorage.getItem(key);
+                    if (val !== null) {
+                        tasks[key] = val === 'true';
+                    }
+                }
+            }
+
+            let completionLogs = null;
+            try {
+                completionLogs = JSON.parse(localStorage.getItem('completion-logs'));
+            } catch(e) {}
+            if (!completionLogs || !completionLogs.length) completionLogs = [["", "", ""]];
+
+            let revisionLogs = null;
+            try {
+                revisionLogs = JSON.parse(localStorage.getItem('revision-logs'));
+            } catch(e) {}
+            if (!revisionLogs || !revisionLogs.length) revisionLogs = [["", "", ""]];
+
+            const dailyNotes = localStorage.getItem('daily-notes') || '';
+
+            const defaultUserData = {
+                tasks: tasks,
+                completionLogs: completionLogs,
+                revisionLogs: revisionLogs,
+                dailyNotes: dailyNotes
+            };
+            localStorage.setItem('studytracker_profile_data_Default User', JSON.stringify(defaultUserData));
+        }
+
+        // 2. STATE LOGIC: Load and Switch Profile Data
+        function loadState() {
+            const activeProfile = localStorage.getItem('studytracker_active_profile') || "Default User";
+            const profilesStr = localStorage.getItem('studytracker_profiles');
+            
+            state.activeProfile = activeProfile;
+            state.profiles = profilesStr ? JSON.parse(profilesStr) : ["Default User"];
+
+            const profileDataStr = localStorage.getItem(`studytracker_profile_data_${activeProfile}`);
+            if (profileDataStr) {
+                try {
+                    state.data = JSON.parse(profileDataStr);
+                } catch(e) {
+                    resetProfileDataToDefault();
+                }
+            } else {
+                resetProfileDataToDefault();
+            }
+
+            // Fallback validation to avoid structure breaks
+            if (!state.data.tasks) state.data.tasks = {};
+            if (!state.data.completionLogs) state.data.completionLogs = [["", "", ""]];
+            if (!state.data.revisionLogs) state.data.revisionLogs = [["", "", ""]];
+            if (state.data.dailyNotes === undefined) state.data.dailyNotes = "";
+        }
+
+        function saveState() {
+            localStorage.setItem('studytracker_profiles', JSON.stringify(state.profiles));
+            localStorage.setItem('studytracker_active_profile', state.activeProfile);
+            localStorage.setItem(`studytracker_profile_data_${state.activeProfile}`, JSON.stringify(state.data));
+        }
+
+        function resetProfileDataToDefault() {
+            state.data = {
+                tasks: {},
+                completionLogs: [["", "", ""]],
+                revisionLogs: [["", "", ""]],
+                dailyNotes: ""
+            };
+        }
+
+        function switchProfile(profileName) {
+            // Check if target profile is passcode protected
+            const profileDataStr = localStorage.getItem(`studytracker_profile_data_${profileName}`);
+            let profileData = null;
+            if (profileDataStr) {
+                try {
+                    profileData = JSON.parse(profileDataStr);
+                } catch(e) {}
+            }
+
+            if (profileData && profileData.passcode) {
+                // Trigger passcode verification modal
+                pendingProfileName = profileName;
+                document.getElementById('signin-profile-name').textContent = profileName;
+                document.getElementById('signin-passcode').value = '';
+                document.getElementById('signin-modal').classList.remove('hidden');
+                document.getElementById('signin-passcode').focus();
+                // Temporarily revert select dropdown value to active profile
+                document.getElementById('profile-select').value = state.activeProfile;
+                return;
+            }
+
+            performSwitch(profileName);
+        }
+
+        function performSwitch(profileName) {
+            state.activeProfile = profileName;
+            localStorage.setItem('studytracker_active_profile', profileName);
+            loadState();
+            
+            // Re-render whole UI with new user context
+            renderCalendar();
+            renderLogs('completion');
+            renderLogs('revision');
+            updateNotesUI();
+            updateAnalytics();
+            highlightTodayRow();
+        }
+
+        function submitPasscode() {
+            const entered = document.getElementById('signin-passcode').value.trim();
+            const profileDataStr = localStorage.getItem(`studytracker_profile_data_${pendingProfileName}`);
+            let profileData = null;
+            if (profileDataStr) {
+                try {
+                    profileData = JSON.parse(profileDataStr);
+                } catch(e) {}
+            }
+
+            if (profileData && profileData.passcode === entered) {
+                document.getElementById('signin-modal').classList.add('hidden');
+                performSwitch(pendingProfileName);
+                document.getElementById('profile-select').value = pendingProfileName;
+            } else {
+                alert("Incorrect passcode! Sign In failed.");
+            }
+        }
+
+        function cancelSignin() {
+            document.getElementById('signin-modal').classList.add('hidden');
+            // If they cancelled during startup load, fallback to first unlocked profile
+            if (state.activeProfile === pendingProfileName) {
+                let fallback = "Default User";
+                for (const p of state.profiles) {
+                    const dataStr = localStorage.getItem(`studytracker_profile_data_${p}`);
+                    let d = null;
+                    if (dataStr) { try { d = JSON.parse(dataStr); } catch(e) {} }
+                    if (!d || !d.passcode) {
+                        fallback = p;
+                        break;
+                    }
+                }
+                performSwitch(fallback);
+                document.getElementById('profile-select').value = fallback;
+            } else {
+                document.getElementById('profile-select').value = state.activeProfile;
+            }
+        }
+
+        function createNewProfile() {
+            const name = prompt("Enter a name for the new profile:");
+            if (!name) return;
+            const cleanedName = name.trim();
+            if (cleanedName === "") return;
+
+            if (state.profiles.includes(cleanedName)) {
+                alert("This profile name already exists.");
+                return;
+            }
+
+            const passcode = prompt("Set a passcode lock for this profile (optional - leave blank if you do not want password protection):");
+
+            state.profiles.push(cleanedName);
+            state.activeProfile = cleanedName;
+            resetProfileDataToDefault();
+            state.data.passcode = passcode ? passcode.trim() : "";
+            saveState();
+
+            // Refresh UI
+            renderProfileList();
+            performSwitch(cleanedName);
+        }
+
+        function managePasscode() {
+            const currentPasscode = state.data.passcode || "";
+            let verified = true;
+            
+            if (currentPasscode) {
+                const entered = prompt("Enter current passcode to verify identity:");
+                if (entered !== currentPasscode) {
+                    alert("Incorrect passcode! Access denied.");
+                    verified = false;
+                }
+            }
+
+            if (!verified) return;
+
+            const newPasscode = prompt("Enter a new passcode lock (leave empty to remove passcode lock completely):");
+            if (newPasscode === null) return; // Cancelled
+
+            state.data.passcode = newPasscode.trim();
+            saveState();
+
+            if (state.data.passcode) {
+                alert("Passcode lock enabled! This profile is now protected.");
+            } else {
+                alert("Passcode lock disabled. This profile is now open.");
+            }
+        }
+
+        function deleteActiveProfile() {
+            if (state.profiles.length <= 1) {
+                alert("Cannot delete the only remaining profile. Create a new one first.");
+                return;
+            }
+
+            const confirmDelete = confirm(`Are you sure you want to delete profile "${state.activeProfile}"? All study progress for this profile will be permanently lost.`);
+            if (!confirmDelete) return;
+
+            const indexToDelete = state.profiles.indexOf(state.activeProfile);
+            state.profiles.splice(indexToDelete, 1);
+            localStorage.removeItem(`studytracker_profile_data_${state.activeProfile}`);
+
+            // Switch to the first profile in the list
+            state.activeProfile = state.profiles[0];
+            saveState();
+
+            // Refresh UI
+            renderProfileList();
+            switchProfile(state.activeProfile);
+        }
+
+        function renderProfileList() {
+            const selectEl = document.getElementById('profile-select');
+            selectEl.innerHTML = '';
+            state.profiles.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p;
+                opt.selected = p === state.activeProfile;
+                selectEl.appendChild(opt);
+            });
+        }
+
+        // 3. BACKUP & RESTORE MODULE (Prevent Data Loss)
+        function exportUserData() {
+            const backup = {
+                activeProfile: state.activeProfile,
+                profiles: state.profiles,
+                profileData: {}
+            };
+            
+            state.profiles.forEach(p => {
+                const dataStr = localStorage.getItem(`studytracker_profile_data_${p}`);
+                backup.profileData[p] = dataStr ? JSON.parse(dataStr) : null;
+            });
+
+            const blob = new Blob([JSON.stringify(backup, null, 2)], {type : 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `medical_study_tracker_backup_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function triggerImport() {
+            document.getElementById('import-file').click();
+        }
+
+        function importUserData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backup = JSON.parse(e.target.result);
+                    if (!backup.profiles || !backup.profileData || !backup.activeProfile) {
+                        alert("Invalid backup file structure. Please upload a correct JSON backup.");
+                        return;
+                    }
+
+                    const confirmImport = confirm("This will merge/overwrite existing local profiles with the backup data. Do you want to proceed?");
+                    if (!confirmImport) return;
+
+                    // Write to local storage
+                    localStorage.setItem('studytracker_profiles', JSON.stringify(backup.profiles));
+                    localStorage.setItem('studytracker_active_profile', backup.activeProfile);
+                    
+                    for (const profile in backup.profileData) {
+                        if (backup.profileData[profile]) {
+                            localStorage.setItem(`studytracker_profile_data_${profile}`, JSON.stringify(backup.profileData[profile]));
+                        }
+                    }
+
+                    alert("Data imported successfully! Loading profiles...");
+                    location.reload();
+                } catch(err) {
+                    alert("Error parsing backup file: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 4. MAIN STUDY TRACKER TIMETABLE RENDER
+        function renderCalendar() {
+            const tbody = document.getElementById('tracker-body');
+            tbody.innerHTML = '';
+
+            data.forEach((row, rowIndex) => {
+                const tr = document.createElement('tr');
+                tr.dataset.date = row[0]; // Set data attribute for today's highlighter
+                tr.className = rowIndex % 2 === 0 ? 'bg-slate-50/50 hover:bg-indigo-50/20 transition-colors' : 'bg-white/50 hover:bg-indigo-50/20 transition-colors';
+                
+                row.forEach((cell, cellIndex) => {
+                    const td = document.createElement('td');
+                    td.className = "p-4 border-r border-slate-200/80 last:border-r-0 align-middle";
+                    
+                    if (cellIndex === 0) {
+                        td.innerHTML = `<span class="font-bold text-indigo-800 text-sm whitespace-nowrap">${cell}</span>`;
+                    } else {
+                        const id = `check-${rowIndex}-${cellIndex}`;
+                        const isChecked = state.data.tasks[id] === true;
+                        
+                        td.innerHTML = `
+                            <label class="flex items-start gap-2.5 cursor-pointer select-none py-1 group">
+                                <input type="checkbox" id="${id}" ${isChecked ? 'checked' : ''} onchange="toggleTask('${id}')" 
+                                    class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 mt-0.5 cursor-pointer accent-indigo-600 transition">
+                                <span class="text-xs text-slate-700 leading-tight group-hover:text-slate-900 font-medium ${isChecked ? 'completed' : ''}">${cell}</span>
+                            </label>`;
+                    }
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        function toggleTask(id) {
+            const checkbox = document.getElementById(id);
+            state.data.tasks[id] = checkbox.checked;
+            
+            // Toggle strike out class
+            const labelSpan = checkbox.nextElementSibling;
+            if (checkbox.checked) {
+                labelSpan.classList.add('completed');
+            } else {
+                labelSpan.classList.remove('completed');
+            }
+
+            saveState();
+            updateAnalytics();
+        }
+
+        // 5. DYNAMIC LOG ENTRIES (Completion Log & Revision Log)
+        function renderLogs(type) {
+            const listKey = type === 'completion' ? 'completionLogs' : 'revisionLogs';
+            const body = document.getElementById(`${type}-body`);
+            const logs = state.data[listKey] || [["", "", ""]];
+            body.innerHTML = '';
+
+            if (logs.length === 0) {
+                logs.push(["", "", ""]);
+                state.data[listKey] = logs;
+            }
+
+            logs.forEach((log, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/50 transition-colors group";
+                tr.innerHTML = `
+                    <td class="p-2 border border-slate-200/80">
+                        <input type="text" class="w-full bg-transparent outline-none border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white/80 rounded py-0.5 px-1 font-medium transition text-xs" 
+                            value="${log[0] || ''}" oninput="updateLog('${type}', ${index}, 0, this.value)" placeholder="e.g. June 6">
+                    </td>
+                    <td class="p-2 border border-slate-200/80">
+                        <input type="text" class="w-full bg-transparent outline-none border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white/80 rounded py-0.5 px-1 font-medium transition text-xs" 
+                            value="${log[1] || ''}" oninput="updateLog('${type}', ${index}, 1, this.value)" placeholder="e.g. 10:30 AM">
+                    </td>
+                    <td class="p-2 border border-slate-200/80">
+                        <div class="flex items-center justify-between gap-1">
+                            <input type="text" class="w-full bg-transparent outline-none border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white/80 rounded py-0.5 px-1 font-medium transition text-xs" 
+                                value="${log[2] || ''}" oninput="updateLog('${type}', ${index}, 2, this.value)" placeholder="Enter description/chapter details">
+                            <button onclick="removeLog('${type}', ${index})" class="text-rose-500 hover:text-rose-700 hover:bg-rose-100/50 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity" title="Delete entry">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        function addLog(type) {
+            const listKey = type === 'completion' ? 'completionLogs' : 'revisionLogs';
+            if (!state.data[listKey]) state.data[listKey] = [];
+            state.data[listKey].push(["", "", ""]);
+            saveState();
+            renderLogs(type);
+        }
+
+        function updateLog(type, index, field, value) {
+            const listKey = type === 'completion' ? 'completionLogs' : 'revisionLogs';
+            state.data[listKey][index][field] = value;
+            saveState();
+        }
+
+        function removeLog(type, index) {
+            const listKey = type === 'completion' ? 'completionLogs' : 'revisionLogs';
+            state.data[listKey].splice(index, 1);
+            if (state.data[listKey].length === 0) {
+                state.data[listKey].push(["", "", ""]);
+            }
+            saveState();
+            renderLogs(type);
+        }
+
+        // 6. NOTES & REFLECTIONS
+        function updateNotes(value) {
+            state.data.dailyNotes = value;
+            saveState();
+        }
+
+        function updateNotesUI() {
+            document.getElementById('daily-notes').value = state.data.dailyNotes || "";
+        }
+
+        // 7. STUDY ANALYTICS ENGINE
+        // Map table cell topics to major subjects for metrics
+        function getSubject(cellText) {
+            const text = cellText.toLowerCase();
+            if (text.includes("anatomy") || text.includes("embrio") || text.includes("junctions") || text.includes("epithelium") || text.includes("connective") || text.includes("embryo") || text.includes("anat")) return "Anatomy";
+            if (text.includes("physiology") || text.includes("compartments") || text.includes("transport") || text.includes("cells") || text.includes("physio")) return "Physiology";
+            if (text.includes("biochem")) return "Biochemistry";
+            if (text.includes("micro") || text.includes("flora") || text.includes("bacteria") || text.includes("fungi") || text.includes("parasites") || text.includes("mycoses")) return "Microbiology";
+            if (text.includes("patho") || text.includes("adaptations") || text.includes("inflam") || text.includes("wound") || text.includes("oedema") || text.includes("thrombosis") || text.includes("infarct") || text.includes("shock") || text.includes("tumors") || text.includes("melanoma") || text.includes("lesions")) return "Pathology";
+            if (text.includes("pharma") || text.includes("kinetics") || text.includes("dynamics") || text.includes("adverse") || text.includes("drugs") || text.includes("sympathetic") || text.includes("parasympathetic") || text.includes("glaucoma") || text.includes("antibacterials") || text.includes("leprosy")) return "Pharmacology";
+            if (text.includes("comm med") || text.includes("nutrition") || text.includes("health concept") || text.includes("ancient") || text.includes("community")) return "Community Med";
+            if (text.includes("icm") || text.includes("patient") || text.includes("history") || text.includes("surgical") || text.includes("clinical")) return "ICM";
+            if (text.includes("mcqs") || text.includes("mcq")) return "MCQs";
+            if (text.includes("flashcards") || text.includes("flash")) return "Flashcards";
+            return "General Revision";
+        }
+
+        function updateAnalytics() {
+            const totalTasks = 21 * 5; // 21 days, 5 slots per day
+            let completedCount = 0;
+
+            const subjectTotals = {};
+            const subjectCompleted = {};
+            const subjectColors = {
+                "Anatomy": "bg-indigo-600",
+                "Physiology": "bg-emerald-600",
+                "Biochemistry": "bg-rose-500",
+                "Microbiology": "bg-amber-500",
+                "Pathology": "bg-purple-600",
+                "Pharmacology": "bg-sky-500",
+                "Community Med": "bg-teal-600",
+                "ICM": "bg-violet-600",
+                "MCQs": "bg-blue-600",
+                "Flashcards": "bg-fuchsia-500",
+                "General Revision": "bg-slate-500"
+            };
+
+            // Initialize keys
+            Object.keys(subjectColors).forEach(k => {
+                subjectTotals[k] = 0;
+                subjectCompleted[k] = 0;
+            });
+
+            // Map & count tasks in grid
+            data.forEach((row, rowIndex) => {
+                row.forEach((cell, cellIndex) => {
+                    if (cellIndex === 0) return; // Date column
+                    
+                    const subj = getSubject(cell);
+                    subjectTotals[subj] = (subjectTotals[subj] || 0) + 1;
+
+                    const id = `check-${rowIndex}-${cellIndex}`;
+                    if (state.data.tasks[id] === true) {
+                        completedCount++;
+                        subjectCompleted[subj] = (subjectCompleted[subj] || 0) + 1;
+                    }
+                });
+            });
+
+            // 1. Calculate and update Global Progress Ring
+            const percentage = Math.round((completedCount / totalTasks) * 100) || 0;
+            document.getElementById('progress-percentage').textContent = `${percentage}%`;
+            document.getElementById('progress-fraction').textContent = `${completedCount} / ${totalTasks}`;
+            
+            // Adjust SVG Ring dashoffset (circumference of r=42 is 2 * Math.PI * 42 = 263.89)
+            const circumference = 263.89;
+            const offset = circumference - (percentage / 100) * circumference;
+            document.getElementById('progress-circle').style.strokeDashoffset = offset;
+
+            // 2. Build Subject Progress Lists
+            const container = document.getElementById('subject-progress-container');
+            container.innerHTML = '';
+
+            Object.keys(subjectTotals).forEach(subj => {
+                const total = subjectTotals[subj];
+                if (total === 0) return; // Skip if subject doesn't exist in slots
+                
+                const done = subjectCompleted[subj] || 0;
+                const subjPercent = Math.round((done / total) * 100) || 0;
+                const colorClass = subjectColors[subj] || "bg-indigo-600";
+
+                const wrapper = document.createElement('div');
+                wrapper.className = "group/progress";
+                wrapper.innerHTML = `
+                    <div class="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+                        <span class="hover:text-indigo-600 transition-colors">${subj}</span>
+                        <span class="text-slate-400 font-bold group-hover/progress:text-slate-700 transition-colors">${done} / ${total} <span class="text-[10px] font-medium text-slate-400">(${subjPercent}%)</span></span>
+                    </div>
+                    <div class="w-full bg-slate-200/70 rounded-full h-2 overflow-hidden border border-slate-100 shadow-inner">
+                        <div class="${colorClass} h-2 rounded-full transition-all duration-500 ease-out" style="width: ${subjPercent}%"></div>
+                    </div>
+                `;
+                container.appendChild(wrapper);
+            });
+        }
+
+        // 8. DYNAMIC DAY HIGHLIGHTER
+        function highlightTodayRow() {
+            // Get today's local date and match format (e.g. "June 6" or "June 12")
+            const today = new Date();
+            const formatOption = { month: 'long', day: 'numeric' };
+            const formattedToday = today.toLocaleDateString('en-US', formatOption); 
+            
+            // Clear any old highlights
+            document.querySelectorAll('#tracker-body tr').forEach(row => {
+                row.classList.remove('border-2', 'border-indigo-500', 'bg-indigo-50/30', 'shadow-md');
+            });
+
+            // Find matching row
+            const rows = document.querySelectorAll('#tracker-body tr');
+            for (const row of rows) {
+                if (row.dataset.date === formattedToday) {
+                    row.classList.add('border-2', 'border-indigo-500', 'bg-indigo-50/40', 'shadow-sm', 'font-medium');
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    break;
+                }
+            }
+        }
+
+        // 9. POMODORO FOCUS TIMER WIDGET (With Synthesized Beep Notification)
+        let timerInterval = null;
+        let timerDuration = 25 * 60; // default 25m in seconds
+        let currentTimerMode = 'study'; // study, short, long
+        let isTimerRunning = false;
+
+        function setTimerMode(mode, minutes) {
+            // Clear current execution
+            pauseTimer();
+
+            currentTimerMode = mode;
+            timerDuration = minutes * 60;
+
+            // Reset tab highlights
+            const studyBtn = document.getElementById('btn-mode-study');
+            const shortBtn = document.getElementById('btn-mode-short');
+            const longBtn = document.getElementById('btn-mode-long');
+            
+            [studyBtn, shortBtn, longBtn].forEach(btn => {
+                btn.className = "flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition";
+            });
+
+            const activeBtn = document.getElementById(`btn-mode-${mode}`);
+            activeBtn.className = "flex-1 py-1.5 rounded-lg text-indigo-700 bg-white shadow-sm transition";
+
+            const labelEl = document.getElementById('timer-label');
+            if (mode === 'study') labelEl.textContent = 'Focus Time';
+            else if (mode === 'short') labelEl.textContent = 'Short Break';
+            else labelEl.textContent = 'Long Break';
+
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timerDuration / 60);
+            const seconds = timerDuration % 60;
+            document.getElementById('timer-display').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            // Adjust countdown progress circle (circumference = 2 * Math.PI * 45 = 282.74)
+            const circumference = 282.74;
+            let totalModeDuration = 25 * 60;
+            if (currentTimerMode === 'short') totalModeDuration = 5 * 60;
+            else if (currentTimerMode === 'long') totalModeDuration = 15 * 60;
+
+            const percentage = (timerDuration / totalModeDuration);
+            const offset = (1 - percentage) * circumference;
+            document.getElementById('timer-progress').style.strokeDashoffset = offset;
+        }
+
+        function toggleTimer() {
+            if (isTimerRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            if (isTimerRunning) return;
+            isTimerRunning = true;
+            document.getElementById('btn-timer-toggle').textContent = "Pause Timer";
+            document.getElementById('btn-timer-toggle').classList.replace('bg-indigo-600', 'bg-slate-700');
+            document.getElementById('btn-timer-toggle').classList.replace('hover:bg-indigo-700', 'hover:bg-slate-800');
+
+            timerInterval = setInterval(() => {
+                if (timerDuration > 0) {
+                    timerDuration--;
+                    updateTimerDisplay();
+                } else {
+                    // Timer finished
+                    triggerAlarm();
+                    resetTimer();
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            if (!isTimerRunning) return;
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            document.getElementById('btn-timer-toggle').textContent = "Resume";
+            document.getElementById('btn-timer-toggle').classList.replace('bg-slate-700', 'bg-indigo-600');
+            document.getElementById('btn-timer-toggle').classList.replace('hover:bg-slate-800', 'hover:bg-indigo-700');
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            let minutes = 25;
+            if (currentTimerMode === 'short') minutes = 5;
+            else if (currentTimerMode === 'long') minutes = 15;
+            
+            timerDuration = minutes * 60;
+            document.getElementById('btn-timer-toggle').textContent = "Start Focus";
+            updateTimerDisplay();
+        }
+
+        // Web Audio Synthesized Chime (100% offline, requires no external static audio files)
+        function triggerAlarm() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Play double beep
+                playTone(audioCtx, 587.33, 0.4); // D5
+                setTimeout(() => {
+                    playTone(audioCtx, 659.25, 0.5); // E5
+                }, 450);
+
+                setTimeout(() => {
+                    alert(`Focus interval completed! Mode: ${currentTimerMode === 'study' ? 'Study session finished! Time for a break.' : 'Break finished! Time to focus.'}`);
+                }, 1000);
+
+            } catch (err) {
+                console.error("Synthesizer audio fail:", err);
+            }
+        }
+
+        function playTone(ctx, freq, duration) {
+            const osc = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+
+            osc.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            
+            gainNode.gain.setValueAtTime(0, ctx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05); // attack
+            gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration - 0.05); // decay
+
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + duration);
+        }
+    </script>
+
+    <!-- Sign In Passcode Modal Overlay -->
+    <div id="signin-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-card max-w-sm w-full p-6 text-center border-indigo-500/30 rounded-2xl shadow-xl">
+            <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-indigo-100 shadow-sm animate-bounce">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </div>
+            <h2 class="text-xl font-bold text-slate-900 mb-1">Sign In Required</h2>
+            <p class="text-xs text-slate-500 mb-5 font-medium">Please enter the passcode for: <span id="signin-profile-name" class="text-indigo-600 font-bold"></span></p>
+            <input type="password" id="signin-passcode" class="w-full text-center tracking-widest text-lg font-bold p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none mb-5" placeholder="••••">
+            <div class="flex gap-3">
+                <button onclick="submitPasscode()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-semibold transition shadow-sm">Unlock Profile</button>
+                <button onclick="cancelSignin()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold transition border border-slate-200">Cancel</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
