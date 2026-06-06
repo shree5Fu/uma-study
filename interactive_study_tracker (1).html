@@ -473,12 +473,12 @@
     <!-- Script Block -->
     <script>
         // Initialize Supabase Client Safely
-        let supabase = null;
+        let supabaseClient = null;
         try {
             if (window.supabase && typeof window.supabase.createClient === 'function') {
                 const supabaseUrl = 'https://zomfvmpkwqzxphyhyysn.supabase.co';
                 const supabaseKey = 'sb_publishable_RKeV3PTqp6h9sqEbrfZHfw_kcHAnp2K';
-                supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
             }
         } catch (e) {
             console.error("Failed to initialize Supabase client:", e);
@@ -543,7 +543,7 @@
             document.getElementById('auth-password').addEventListener('keypress', handleAuthEnter);
 
             // Handle Supabase initialization logic
-            if (!supabase) {
+            if (!supabaseClient) {
                 // CDN failed, configure fallback to Local Guest Mode automatically
                 console.warn("Supabase library not loaded. Falling back to local Guest mode.");
                 const titleEl = document.getElementById('auth-title');
@@ -561,7 +561,7 @@
                 setTimeout(continueAsGuest, 1500);
             } else {
                 // Setup active Auth listener
-                supabase.auth.onAuthStateChange(async (event, session) => {
+                supabaseClient.auth.onAuthStateChange(async (event, session) => {
                     if (session) {
                         state.user = session.user;
                         state.isGuest = false;
@@ -632,7 +632,7 @@
         }
 
         async function handleAuthSubmit() {
-            if (!supabase) return;
+            if (!supabaseClient) return;
 
             const email = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-password').value;
@@ -647,7 +647,7 @@
 
             if (isSignUpMode) {
                 // Register
-                const { data, error } = await supabase.auth.signUp({ email, password });
+                const { data, error } = await supabaseClient.auth.signUp({ email, password });
                 if (error) {
                     alert("Registration failed: " + error.message);
                 } else {
@@ -661,7 +661,7 @@
                 }
             } else {
                 // Login
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) {
                     alert("Sign In failed: " + error.message);
                 }
@@ -672,8 +672,8 @@
         }
 
         async function handleSignOut() {
-            if (!supabase) return;
-            await supabase.auth.signOut();
+            if (!supabaseClient) return;
+            await supabaseClient.auth.signOut();
             state.user = null;
             state.isGuest = false;
             // Clear page data
@@ -696,9 +696,9 @@
 
         // Fetch cloud profiles from Supabase database
         async function fetchCloudProfiles() {
-            if (!state.user || !supabase) return;
+            if (!state.user || !supabaseClient) return;
 
-            const { data: rows, error } = await supabase
+            const { data: rows, error } = await supabaseClient
                 .from('study_progress')
                 .select('profile_name')
                 .order('profile_name', { ascending: true });
@@ -728,9 +728,9 @@
         }
 
         async function fetchCloudProfileData(profileName) {
-            if (!state.user || !supabase) return;
+            if (!state.user || !supabaseClient) return;
 
-            const { data: row, error } = await supabase
+            const { data: row, error } = await supabaseClient
                 .from('study_progress')
                 .select('*')
                 .eq('profile_name', profileName)
@@ -779,12 +779,12 @@
         }
 
         async function saveCloudState() {
-            if (state.isGuest || !state.user || !supabase) return;
+            if (state.isGuest || !state.user || !supabaseClient) return;
 
             const statusText = document.getElementById('save-status-text');
             const statusIcon = document.getElementById('save-status-icon');
 
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('study_progress')
                 .upsert({
                     user_id: state.user.id,
@@ -1069,10 +1069,11 @@
                 performSwitch(state.activeProfile);
             } else {
                 // Cloud delete
+                if (!supabaseClient) return;
                 const indexToDelete = state.profiles.indexOf(deletedProfile);
                 state.profiles.splice(indexToDelete, 1);
                 
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('study_progress')
                     .delete()
                     .eq('profile_name', deletedProfile)
